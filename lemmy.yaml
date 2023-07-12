@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config.hjson
+  namespace: lemmy
+data:
+  config.hjson: |
+    {
+      # for more info about the config, check out the documentation
+      # https://join-lemmy.org/docs/en/administration/configuration.html
+
+      database: {
+        host: lemmy-db
+        password: "lemmy"
+      }
+      hostname: "lemmy.webster.home"
+      pictrs: {
+        url: "http://pictrs:8080/"
+        api_key: "lemmy"
+      }
+      email: {
+        smtp_server: "postfix:25"
+        smtp_from_address: "noreply@lemmy.webster.home"
+        tls_type: "none"
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: lemmy
+  name: lemmy
+  namespace: lemmy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lemmy
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: lemmy
+    spec:
+      containers:
+      - name: lemmy
+        image: ghcr.io/ubergeek77/lemmy:0.18.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8536
+          protocol: TCP
+        env:
+          - name: RUST_LOG
+            value: warn
+          - name: RUST_BACKTRACE
+            value: full
+          - name: LEMMY_DATABASE_URL
+            value: postgres://lemmy:lemmy@lemmy-db:5432/lemmy
+        volumeMounts:
+        - name: config
+          mountPath: /config/config.hjson
+          subPath: config.hjson
+      volumes:
+      - name: config
+        configMap:
+          name: config.hjson
+          items:
+            - key: config.hjson
+              path: config.hjson
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: lemmy
+  namespace: lemmy
+spec:
+  selector:
+    app: lemmy
+  ports:
+  - protocol: TCP
+    port: 80
+    name: tcp
+    targetPort: 8536
+  type: ClusterIP
