@@ -77,7 +77,7 @@ spec:
     spec:
       containers:
       - name: caddy
-        image: caddy:alpine
+        image: caddy:2.6.4-alpine
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

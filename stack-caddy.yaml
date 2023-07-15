@@ -299,8 +299,8 @@ data:
 
     http://lemmy.webster.home {
       import caddy-common
-      reverse_proxy   http://lemmy-ui {
-      }
+      reverse_proxy   http://lemmy-ui
+      log
 
       @lemmy {
         path    /api/*
@@ -355,7 +355,7 @@ spec:
     spec:
       containers:
       - name: caddy
-        image: caddy:alpine
+        image: caddy:2.6.4-alpine
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
